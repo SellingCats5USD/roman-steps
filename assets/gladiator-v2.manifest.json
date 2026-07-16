@@ -1,0 +1,50 @@
+{
+  "source": "assets/gladiator-v1.png",
+  "output": "assets/gladiator-v2.png",
+  "grid": {
+    "columns": 6,
+    "rows": 3,
+    "cellWidth": 256,
+    "walkHeight": 341
+  },
+  "decisionLevel": 2,
+  "reason": "Move the walk-cycle trident behind the free hand; preserve shield and all attack cells.",
+  "operations": [
+    {
+      "row": 0,
+      "frame": 0,
+      "shiftX": -48,
+      "maskedPixels": 1275
+    },
+    {
+      "row": 0,
+      "frame": 1,
+      "shiftX": -48,
+      "maskedPixels": 1138
+    },
+    {
+      "row": 0,
+      "frame": 2,
+      "shiftX": -48,
+      "maskedPixels": 743
+    },
+    {
+      "row": 0,
+      "frame": 3,
+      "shiftX": -48,
+      "maskedPixels": 1324
+    },
+    {
+      "row": 0,
+      "frame": 4,
+      "shiftX": -48,
+      "maskedPixels": 1340
+    },
+    {
+      "row": 0,
+      "frame": 5,
+      "shiftX": -48,
+      "maskedPixels": 521
+    }
+  ]
+}

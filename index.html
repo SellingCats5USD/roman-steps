@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#6f1d24" />
+    <title>Roman Steps</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark">R</span>
+          <div>
+            <h1 id="level-name">Roman Steps</h1>
+            <p id="level-subtitle">Province I � Via Aurelia</p>
+          </div>
+        </div>
+        <div class="controls" aria-label="Game controls">
+          <span><kbd>A</kbd><kbd>D</kbd> Move</span>
+          <span><kbd>W</kbd> Jump</span>
+          <span><kbd>S</kbd> Shield</span>
+          <span><kbd>Space</kbd> Melee</span>
+          <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> Items</span>
+          <span><kbd>I</kbd> Inventory</span>
+          <span><kbd>E</kbd> Use item</span>
+          <span><kbd>Z</kbd> Pet companion</span>
+          <span><kbd>Q</kbd> Shop</span>
+          <span><kbd>M</kbd> Music</span>
+          <button id="creative-toggle" class="creative-toggle" type="button">Creative</button>
+          <span><kbd>R</kbd> Restart</span>
+        </div>
+      </header>
+
+      <section class="canvas-wrap">
+        <canvas id="game" width="1280" height="720" aria-label="Roman Steps platform game"></canvas>
+        <nav id="item-bar" class="item-bar" aria-label="Selected item">
+          <button class="item-slot selected" type="button" data-item="sling" aria-label="Select sling">
+            <span class="item-number">1</span>
+            <img src="assets/stone-photo-v1.png" alt="" />
+            <span><strong>Sling</strong><small id="item-sling-status">Not found</small></span>
+          </button>
+          <button class="item-slot" type="button" data-item="pet" aria-label="Select flower salamander" disabled>
+            <span class="item-number">2</span>
+            <i class="pet-frame-icon" aria-hidden="true"></i>
+            <span><strong>Salamander</strong><small id="item-pet-mode">Locked</small></span>
+          </button>
+          <button class="item-slot" type="button" data-item="chicken" aria-label="Select egg chicken" disabled>
+            <span class="item-number">3</span>
+            <i class="chicken-frame-icon" aria-hidden="true"></i>
+            <span><strong>Chicken</strong><small id="item-chicken-mode">Locked</small></span>
+          </button>
+          <button class="item-slot" type="button" data-item="banana" aria-label="Select banana" disabled>
+            <span class="item-number">4</span>
+            <img src="assets/banana-health-v2.png" alt="" />
+            <span><strong>Banana</strong><small id="item-banana-status">0 bananas</small></span>
+          </button>
+
+        </nav>
+        <div class="item-use-hint" aria-label="Press E to use selected item"><kbd>E</kbd><span>Use item</span></div>
+        <aside id="inventory-panel" class="inventory-panel" aria-hidden="true" aria-label="Equipment inventory">
+          <div class="inventory-heading">
+            <div><span>LEGIONARY KIT</span><strong>Inventory &amp; Equipment</strong></div>
+            <button id="inventory-close" class="shop-close" type="button" aria-label="Close inventory">×</button>
+          </div>
+          <p class="inventory-help">Choose one weapon and one armor set. Purchases stay here instead of using item-bar slots.</p>
+          <section class="equipment-section" aria-labelledby="weapons-title">
+            <h3 id="weapons-title">Weapons</h3>
+            <div class="equipment-grid">
+              <button class="equipment-card" type="button" data-equip-type="weapon" data-equip="gladius"><i class="equipment-sprite bronze-gladius" aria-hidden="true"></i><span><strong>Gladius</strong><small id="equip-gladius-status">Equipped</small></span></button>
+              <button class="equipment-card" type="button" data-equip-type="weapon" data-equip="diamond" disabled><img src="assets/diamond-sword-v1.png" alt="" /><span><strong>Diamond sword</strong><small id="equip-diamond-status">Locked</small></span></button>
+              <button class="equipment-card" type="button" data-equip-type="weapon" data-equip="master" disabled><img class="master-diamond-sword-icon" src="assets/master-diamond-sword-v1.png" alt="" /><span><strong>Master diamond sword</strong><small id="equip-master-diamond-status">Locked</small></span></button>
+            </div>
+          </section>
+          <section class="equipment-section" aria-labelledby="armor-title">
+            <h3 id="armor-title">Armor</h3>
+            <div class="equipment-grid">
+              <button class="equipment-card" type="button" data-equip-type="armor" data-equip="bronze"><i class="equipment-sprite bronze-armor" aria-hidden="true"></i><span><strong>Original armor</strong><small id="equip-bronze-status">Equipped</small></span></button>
+              <button class="equipment-card" type="button" data-equip-type="armor" data-equip="silver" disabled><img src="assets/silver-armor-icon-v1.png" alt="" /><span><strong>Silver armor</strong><small id="equip-silver-status">Locked</small></span></button>
+            </div>
+          </section>
+          <p id="inventory-feedback" class="inventory-feedback">Press I to close.</p>
+        </aside>
+        <aside id="shop-panel" class="shop-panel" aria-hidden="true" aria-label="Merchant shop">
+          <div class="shop-heading">
+            <div>
+              <span>ROMAN MERCHANT</span>
+              <strong>Felix's Field Shop</strong>
+            </div>
+            <button id="shop-close" class="shop-close" type="button" aria-label="Close shop">×</button>
+          </div>
+          <div class="shop-balance">
+            <span>Purse</span>
+            <strong id="shop-denarii">0 denarii</strong>
+          </div>
+          <div class="shop-item">
+            <img src="assets/stone-photo-v1.png" alt="" />
+            <div>
+              <strong>Sling stone</strong>
+              <small>One smooth stone for your sling.</small>
+              <span id="shop-ammo">0 / 30 stones</span>
+            </div>
+            <button id="shop-buy-stone" type="button">Buy · 2 denarii</button>
+          </div>
+          <div class="shop-item">
+            <img src="assets/silver-armor-icon-v1.png" alt="" />
+            <div>
+              <strong>Silver armor</strong>
+              <small>Two armor points: every second hit costs 1 HP.</small>
+              <span id="shop-armor-status">Not owned</span>
+            </div>
+            <button id="shop-buy-armor" type="button">Buy - 30 denarii</button>
+          </div>
+          <div class="shop-item">
+            <img class="diamond-sword-icon" src="assets/diamond-sword-v1.png" alt="" />
+            <div>
+              <strong>Diamond sword</strong>
+              <small>Twice the gladius damage, with longer reach and much stronger knockback.</small>
+              <span id="shop-diamond-status">Not owned</span>
+            </div>
+            <button id="shop-buy-diamond" type="button">Buy - 68 denarii</button>
+          </div>
+          <div class="shop-item">
+            <img class="master-diamond-sword-icon" src="assets/master-diamond-sword-v1.png" alt="" />
+            <div>
+              <strong>Master diamond sword</strong>
+              <small>50% more damage than the diamond sword, with an ornate long blade.</small>
+              <span id="shop-master-diamond-status">Not owned</span>
+            </div>
+            <button id="shop-buy-master-diamond" type="button">Buy - 100 denarii</button>
+          </div>
+          <div class="shop-item">
+            <i class="pet-frame-icon shop-pet-icon" aria-hidden="true"></i>
+            <div>
+              <strong>Flower salamander</strong>
+              <small>Follows you and defends you. Select it and press E to change its behavior.</small>
+              <span id="shop-pet-status">Not owned</span>
+            </div>
+            <button id="shop-buy-pet" type="button">Buy - 10 denarii</button>
+          </div>
+          <div class="shop-item">
+            <i class="chicken-frame-icon shop-chicken-icon" aria-hidden="true"></i>
+            <div>
+              <strong>Egg chicken</strong>
+              <small>Follows you and throws the egg on its back at enemies from range.</small>
+              <span id="shop-chicken-status">Not owned</span>
+            </div>
+            <button id="shop-buy-chicken" type="button">Buy - 15 denarii</button>
+          </div>
+          <div class="shop-item">
+            <img src="assets/banana-health-v2.png" alt="" />
+            <div>
+              <strong>Banana</strong>
+              <small>Restores 2 HP. Five seconds between snacks.</small>
+              <span id="shop-banana-status">0 carried</span>
+            </div>
+            <button id="shop-buy-banana" type="button">Buy - 10 denarii</button>
+          </div>
+          <p id="shop-feedback" class="shop-feedback">Press Q to leave the counter.</p>
+        </aside>
+
+        <aside id="creative-panel" class="creative-panel" aria-hidden="true">
+          <div class="creative-heading">
+            <strong>Creative Mode</strong>
+            <span>INSPECTOR</span>
+            <button id="creative-collapse" class="creative-collapse" type="button" aria-label="Collapse creative menu" aria-expanded="true">-</button>
+          </div>
+          <label>Level
+            <select id="creative-level">
+              <option value="0">I � Via Aurelia</option>
+              <option value="1">II � Road to Zama</option>
+              <option value="2">III - Beast of Zama</option>
+              <option value="3">IV - Carthage Citadel</option>
+              <option value="4">V - The Walls of Carthage</option>
+              <option value="5">DEV - Ladder Lab</option>
+            </select>
+          </label>
+          <label class="creative-check"><input id="creative-invincible" type="checkbox" checked /> Invincible</label>
+          <label class="creative-check"><input id="creative-flying" type="checkbox" checked /> Flying / noclip</label>
+          <label class="creative-check"><input id="creative-infinite-money" type="checkbox" checked /> Infinite denarii</label>
+          <label class="creative-check"><input id="creative-infinite-stones" type="checkbox" checked /> Infinite stones</label>
+          <label class="creative-check"><input id="creative-day-night" type="checkbox" /> 10-minute day/night cycle</label>
+          <label id="creative-extended-wrap" class="creative-check" hidden><input id="creative-extended-animation" type="checkbox" /> Extended animation (5x slower)</label>
+          <small>Fly with A/D and W/Q or arrow keys. Attacks deal 3x damage.</small>
+          <button id="creative-exit" type="button">Exit creative mode</button>
+        </aside>
+
+        <div id="start-screen" class="overlay visible">
+          <div class="panel">
+            <span class="eyebrow">THREE-LEVEL CAMPAIGN</span>
+            <h2>Roman Steps</h2>
+            <p>March to Zama, master sword, shield, and sling, then face Carthage's war elephant.</p>
+            <button id="start-button">Begin campaign <span>?</span></button>
+            <small><strong>W</strong> jump � <strong>Space</strong> melee � <strong>S</strong> shield</small>
+          </div>
+        </div>
+
+        <div id="message-screen" class="overlay">
+          <div class="panel">
+            <span id="message-eyebrow" class="eyebrow">LEVEL COMPLETE</span>
+            <h2 id="message-title">Shining work!</h2>
+            <p id="message-text">You conquered the Via Aurelia.</p>
+            <button id="restart-button">March again <span>?</span></button>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <span>5 HP � Shield breaks after four hits � Find the sling in Province II.</span>
+        <span id="game-status" class="status-dot"><i></i> Ready to play</span>
+      </footer>
+    </main>
+    <script src="equipment-manifest.js"></script>
+    <script src="mini-elephant-manifest.js"></script>
+    <script src="campaign.js"></script>
+    <script src="engine.js"></script>
+    <script src="renderer.js"></script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+

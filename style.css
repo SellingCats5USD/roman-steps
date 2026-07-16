@@ -1,0 +1,281 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700;800&family=Fredoka:wght@600;700&display=swap');
+
+:root {
+  color-scheme: dark;
+  font-family: "DM Sans", system-ui, sans-serif;
+  background: #17110f;
+  color: #fff9ed;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 0%, #563128 0, transparent 45%),
+    #101820;
+}
+
+.game-shell {
+  width: min(94vw, 1280px);
+  user-select: none;
+}
+
+.topbar, footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topbar { margin-bottom: 16px; }
+
+.brand { display: flex; gap: 12px; align-items: center; }
+.brand-mark {
+  width: 44px; height: 44px; display: grid; place-items: center;
+  background: #8b2632; color: #f7d78c; border-radius: 50%; border: 2px solid #d5ac57;
+  box-shadow: inset 0 0 0 3px #641822, 0 3px 0 #4d111a;
+  font: 700 26px/1 "Fredoka", sans-serif;
+}
+
+h1, h2, p { margin: 0; }
+h1 { font: 700 21px/1.1 "Fredoka", sans-serif; letter-spacing: .01em; }
+.brand p { color: #bda99b; font-size: 12px; margin-top: 4px; }
+
+.controls { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px 18px; color: #aebdca; font-size: 12px; align-items: center; }
+.controls span { display: flex; align-items: center; gap: 6px; }
+kbd {
+  min-width: 26px; height: 26px; padding: 0 7px; display: inline-grid; place-items: center;
+  border: 1px solid #6d5145; border-bottom-width: 3px; border-radius: 6px;
+  background: #34231e; color: white; font: 700 11px "DM Sans";
+}
+
+.canvas-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  box-shadow: 0 25px 80px #0009, 0 0 0 1px #ffffff15;
+  background: #e8c98d;
+  aspect-ratio: 16 / 9;
+}
+
+canvas { width: 100%; height: 100%; display: block; image-rendering: auto; }
+
+.overlay {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  background: #2a1712a6; backdrop-filter: blur(7px);
+  opacity: 0; visibility: hidden; transition: opacity .25s ease, visibility .25s;
+}
+.overlay.visible { opacity: 1; visibility: visible; }
+.panel {
+  width: min(430px, 84%); text-align: center; padding: 42px 38px 34px;
+  border: 3px solid #263d78; border-radius: 20px 25px 18px 23px;
+  background: linear-gradient(160deg, #fffdf4, #e8dfca);
+  color: #3c2119; box-shadow: 0 20px 70px #24100d66, inset 0 0 0 2px #b68c3f;
+  transform: translateY(8px); transition: transform .25s ease;
+}
+.visible .panel { transform: none; }
+.eyebrow {
+  display: inline-block; padding: 6px 12px; border-radius: 20px;
+  background: #8b2632; color: #f9dda0; letter-spacing: .14em;
+  font-size: 10px; font-weight: 800;
+}
+.panel h2 { margin-top: 15px; font: 700 38px/1 "Fredoka", sans-serif; }
+.panel p { margin: 14px auto 25px; max-width: 330px; color: #796456; font-size: 14px; line-height: 1.55; }
+button {
+  border: 0; border-radius: 12px; padding: 14px 21px; cursor: pointer;
+  background: #8b2632; color: #fff4df; box-shadow: inset 0 -4px #5f1720, 0 7px 18px #6f1d2440;
+  font: 700 14px "DM Sans"; transition: transform .12s ease;
+}
+button:hover { transform: translateY(-2px); }
+button:active { transform: translateY(1px); }
+button span { margin-left: 12px; }
+.panel small { display: block; margin-top: 18px; color: #8ba0b1; font-size: 11px; }
+
+footer { padding: 13px 5px 0; color: #708495; font-size: 11px; }
+.status-dot { display: flex; align-items: center; gap: 7px; }
+.status-dot i { width: 7px; height: 7px; border-radius: 50%; background: #56d689; box-shadow: 0 0 10px #56d689; }
+
+
+.creative-toggle {
+  padding: 7px 11px;
+  border: 2px solid #d5ac57;
+  border-radius: 9px;
+  background: #5a2730;
+  box-shadow: inset 0 -3px #38181e;
+  font-size: 11px;
+}
+.creative-toggle.active { background: #2f6d63; box-shadow: inset 0 -3px #1c463f; }
+.creative-panel {
+  position: absolute; z-index: 4; top: 18px; right: 18px;
+  display: none; width: 255px; padding: 18px;
+  color: #35231f; background: #fff8e9ee;
+  border: 3px solid #263b76; border-radius: 15px 19px 14px 17px;
+  box-shadow: 7px 9px 0 #263b7633;
+}
+.creative-panel.visible { display: grid; gap: 12px; }
+.creative-panel.collapsed { width: 210px; padding: 11px 13px; }
+.creative-panel.collapsed > :not(.creative-heading) { display: none; }
+.creative-panel .creative-collapse {
+  width: 28px; height: 28px; padding: 0; margin-left: 5px;
+  display: grid; place-items: center; border-radius: 8px;
+  font: 800 18px/1 "DM Sans"; box-shadow: inset 0 -2px #5f1720;
+}
+.creative-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.creative-heading strong { font: 700 19px "Fredoka", sans-serif; color: #7e202b; }
+.creative-heading span { font-size: 9px; font-weight: 800; letter-spacing: .12em; color: #2f6d63; }
+.creative-panel label { display: grid; gap: 5px; font-size: 11px; font-weight: 800; }
+.creative-panel select {
+  width: 100%; padding: 8px; border: 2px solid #7d704f; border-radius: 8px;
+  color: #35231f; background: #f4e4bd; font: 700 12px "DM Sans";
+}
+.creative-panel .creative-check { display: flex; grid-template-columns: auto 1fr; align-items: center; gap: 8px; }
+.creative-check input { accent-color: #7e202b; width: 17px; height: 17px; }
+.creative-panel small { color: #715e51; line-height: 1.4; }
+.creative-panel button { padding: 10px 12px; }
+@media (max-width: 720px) {
+  .controls { gap: 8px; }
+  .controls span { font-size: 0; }
+  .brand p, footer span:first-child { display: none; }
+  .game-shell { width: 100vw; }
+  .canvas-wrap { border-radius: 0; }
+  .topbar, footer { padding-left: 12px; padding-right: 12px; }
+}
+
+
+
+
+
+.shop-panel {
+  position: absolute; z-index: 6; left: 50%; top: 50%;
+  display: none; width: min(540px, 88%); max-height: calc(100% - 24px); padding: 13px; overflow-y: auto;
+  transform: translate(-50%, -50%);
+  color: #35231f; background: linear-gradient(155deg, #fff9ea, #e8d7ae);
+  border: 3px solid #263b76; border-radius: 18px 23px 17px 21px;
+  box-shadow: 10px 13px 0 #18265355, 0 25px 70px #0d132080;
+}
+.shop-panel.visible { display: grid; gap: 6px; }
+.shop-heading, .shop-balance, .shop-item { display: flex; align-items: center; }
+.shop-heading { justify-content: space-between; gap: 16px; }
+.shop-heading div { display: grid; gap: 2px; }
+.shop-heading span { color: #2f6d63; font-size: 9px; font-weight: 800; letter-spacing: .15em; }
+.shop-heading strong { color: #7e202b; font: 700 25px "Fredoka", sans-serif; }
+.shop-close {
+  width: 38px; height: 38px; padding: 0; border-radius: 10px;
+  display: grid; place-items: center; font-size: 24px;
+}
+.shop-balance {
+  justify-content: space-between; padding: 10px 13px;
+  border: 2px solid #b69253; border-radius: 10px; background: #f5e8c9;
+}
+.shop-balance span { color: #796456; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.shop-balance strong { color: #7e202b; }
+.shop-item {
+  gap: 10px; padding: 8px 10px; border: 2px solid #7d704f;
+  border-radius: 13px; background: #fffaf0;
+}
+.shop-item img { width: 58px; height: 43px; object-fit: contain; }
+.shop-item img.diamond-sword-icon { width: 48px; height: 58px; }
+.shop-item img.master-diamond-sword-icon { width: 44px; height: 70px; }
+.shop-item div { flex: 1; display: grid; gap: 3px; }
+.shop-item div > strong { font: 700 17px "Fredoka", sans-serif; color: #4d3540; }
+.shop-item small { color: #715e51; line-height: 1.2; }
+.shop-item span { color: #2f6d63; font-size: 11px; font-weight: 800; }
+.shop-item button { padding: 11px 13px; white-space: nowrap; }
+.shop-item button:disabled { cursor: not-allowed; opacity: .48; transform: none; }
+.shop-feedback { min-height: 18px; color: #715e51; font-size: 12px; text-align: center; }
+.item-bar {
+  position: absolute; z-index: 5; left: 50%; bottom: 9px;
+  display: flex; width: min(760px, calc(100% - 48px)); gap: 5px; padding: 5px;
+  overflow-x: auto; transform: translateX(-50%);
+  border: 2px solid #263b76; border-radius: 11px;
+  background: #fff8e9df; box-shadow: 3px 4px 0 #263b7633;
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.item-bar::-webkit-scrollbar { display: none; }
+.item-use-hint {
+  position: absolute; z-index: 5; left: calc(50% + 390px); bottom: 13px;
+  display: flex; align-items: center; gap: 6px; padding: 6px 9px;
+  color: #4d3540; background: #fff8e9e8; border: 2px solid #263b76;
+  border-radius: 9px; box-shadow: 3px 4px 0 #263b7633;
+  font: 800 9px "DM Sans", sans-serif; white-space: nowrap;
+}
+.item-use-hint kbd {
+  min-width: 22px; padding: 3px 5px; color: #fff8e9; background: #7e202b;
+  border: 0; border-radius: 6px; box-shadow: inset 0 -2px #54131c;
+  font: 800 11px "DM Sans", sans-serif; text-align: center;
+}
+@media (max-width: 760px) {
+  .item-use-hint { right: 8px; left: auto; bottom: 8px; }
+}
+.item-slot {
+  position: relative; flex: 0 0 142px; min-height: 42px; padding: 5px 7px;
+  display: grid; grid-template-columns: 34px 1fr; align-items: center; gap: 6px;
+  color: #4d3540; background: #ead9b7; border: 2px solid #9d845d;
+  border-radius: 8px; box-shadow: inset 0 -2px #b79b6c;
+  text-align: left;
+}
+.item-slot:hover { transform: translateY(-1px); }
+.item-slot.selected { border-color: #7e202b; background: #fff6df; box-shadow: inset 0 -3px #d5ac57, 0 0 0 2px #f2cc72; }
+.item-slot:disabled { cursor: not-allowed; opacity: .58; transform: none; }
+.item-slot > img { width: 32px; height: 27px; object-fit: contain; }
+.item-slot > span:last-child { display: grid; gap: 1px; }
+.item-slot strong { font: 700 12px "Fredoka", sans-serif; }
+.item-slot small { color: #2f6d63; font-size: 9px; font-weight: 800; }
+.item-number {
+  position: absolute; left: 2px; top: 2px; width: 15px; height: 15px;
+  display: grid; place-items: center; border-radius: 6px;
+  color: #fff8e9; background: #7e202b; font: 800 9px "DM Sans";
+}
+.pet-frame-icon {
+  display: block; width: 58px; height: 46px;
+  background-image: url("assets/flower-salamander-sheet-v1.png");
+  background-size: 400% 200%; background-position: 0 0;
+  background-repeat: no-repeat;
+}
+.item-slot .pet-frame-icon { width: 34px; height: 29px; }
+.shop-pet-icon { flex: 0 0 58px; }
+.chicken-frame-icon {
+  display: block; width: 58px; height: 46px;
+  background-image: url("assets/chicken-pet-sheet-v1.png");
+  background-size: 400% 300%; background-position: 0 0;
+  background-repeat: no-repeat;
+}
+.item-slot .chicken-frame-icon { width: 34px; height: 29px; }
+.shop-chicken-icon { flex: 0 0 58px; }
+.inventory-panel {
+  position: absolute; z-index: 7; left: 50%; top: 50%; display: none;
+  width: min(650px, 91%); max-height: calc(100% - 28px); padding: 16px; overflow-y: auto;
+  transform: translate(-50%, -50%); color: #35231f;
+  background: linear-gradient(155deg, #fff9ea, #e8d7ae);
+  border: 3px solid #263b76; border-radius: 18px 23px 17px 21px;
+  box-shadow: 10px 13px 0 #18265355, 0 25px 70px #0d132080;
+}
+.inventory-panel.visible { display: grid; gap: 12px; }
+.inventory-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.inventory-heading div { display: grid; gap: 2px; }
+.inventory-heading span { color: #2f6d63; font-size: 9px; font-weight: 800; letter-spacing: .15em; }
+.inventory-heading strong { color: #7e202b; font: 700 25px "Fredoka", sans-serif; }
+.inventory-help, .inventory-feedback { margin: 0; color: #715e51; font-size: 12px; }
+.inventory-feedback { min-height: 17px; text-align: center; font-weight: 700; }
+.equipment-section { display: grid; gap: 7px; }
+.equipment-section h3 { margin: 0; color: #4d3540; font: 700 17px "Fredoka", sans-serif; }
+.equipment-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.equipment-card {
+  min-height: 86px; padding: 9px 12px; display: grid; grid-template-columns: 76px 1fr;
+  align-items: center; gap: 10px; text-align: left; color: #4d3540;
+  background: #fffaf0; border: 2px solid #7d704f; border-radius: 13px;
+}
+.equipment-card:hover:not(:disabled) { transform: translateY(-1px); }
+.equipment-card.equipped { border-color: #7e202b; background: #fff6df; box-shadow: inset 0 -3px #d5ac57, 0 0 0 2px #f2cc72; }
+.equipment-card:disabled { cursor: not-allowed; opacity: .48; transform: none; }
+.equipment-card > img { width: 70px; height: 68px; object-fit: contain; }
+.equipment-card > img.master-diamond-sword-icon { height: 78px; }
+.equipment-card > span { display: grid; gap: 4px; }
+.equipment-card strong { font: 700 16px "Fredoka", sans-serif; }
+.equipment-card small { color: #2f6d63; font-size: 11px; font-weight: 800; }
+.equipment-sprite { display: block; width: 70px; height: 72px; background: url("assets/hero-roman-v4.png") 0 0 / 600% 400% no-repeat; }
+@media (max-width: 600px) { .equipment-grid { grid-template-columns: 1fr; } .inventory-panel { top: 52%; } }

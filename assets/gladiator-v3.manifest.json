@@ -1,0 +1,52 @@
+{
+  "source": "assets\\gladiator-v1.png",
+  "output": "assets\\gladiator-v3.png",
+  "decisionLevel": 3,
+  "motions": {
+    "walk": {
+      "row": 0,
+      "poseFamily": "trident_and_shield_carry"
+    },
+    "attack": {
+      "row": 1,
+      "source": "canonical unchanged"
+    },
+    "block": {
+      "row": 2,
+      "source": "canonical unchanged"
+    }
+  },
+  "replacements": [
+    {
+      "row": 0,
+      "frame": 0,
+      "pose": "carry_a"
+    },
+    {
+      "row": 0,
+      "frame": 1,
+      "pose": "carry_b"
+    },
+    {
+      "row": 0,
+      "frame": 2,
+      "pose": "carry_a"
+    },
+    {
+      "row": 0,
+      "frame": 3,
+      "pose": "carry_b"
+    },
+    {
+      "row": 0,
+      "frame": 4,
+      "pose": "carry_a"
+    },
+    {
+      "row": 0,
+      "frame": 5,
+      "pose": "carry_b"
+    }
+  ],
+  "invariant": "Rows 1 and 2 are copied unchanged from the canonical gladiator sheet."
+}
