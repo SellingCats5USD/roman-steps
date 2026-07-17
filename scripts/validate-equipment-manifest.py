@@ -38,6 +38,17 @@ def main() -> int:
     root = (manifest_path.parent / data.get("projectRoot", ".")).resolve()
     expected = (data["grid"]["columns"] * data["grid"]["cellWidth"], data["grid"]["rows"] * data["grid"]["cellHeight"])
     for weapon_id, weapon in data["weapons"].items():
+        if weapon.get("composition") == "wide_cells":
+            output_cell_width = int(weapon["outputCellWidth"])
+            wide_expected = (data["grid"]["columns"] * output_cell_width, data["grid"]["rows"] * data["grid"]["cellHeight"])
+            if output_cell_width <= data["grid"]["cellWidth"] or weapon.get("framePaddingX", 0) <= 0:
+                raise ValueError(f"wide-cell weapon lacks additional frame space: {weapon_id}")
+            for rel in weapon.get("outputsByArmor", {}).values():
+                path = root / rel
+                if not path.is_file() or png_size(path) != wide_expected:
+                    raise ValueError(f"invalid wide-cell output: {path}")
+            print(f"OK wide-cells: {weapon_id} — {output_cell_width}px frame width")
+            continue
         if weapon.get("composition") == "image_edited":
             if weapon.get("decisionLevel") != 3 or weapon.get("editedRows") != [0, 1] or weapon.get("sharedRows") != [2, 3]:
                 raise ValueError(f"invalid image-edited declaration for {weapon_id}")

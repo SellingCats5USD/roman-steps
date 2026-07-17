@@ -11,6 +11,8 @@ from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[1]
 CELL = 256
+OUTPUT_CELL = 512
+PAD_X = (OUTPUT_CELL - CELL) // 2
 COLS = 6
 ROWS = 4
 
@@ -82,9 +84,9 @@ def trajectory(mask: Image.Image, expected_grip: tuple[float, float]) -> tuple[t
     return grip, unit, length
 def distance_to_edge(point: tuple[float, float], vector: tuple[float, float]) -> float:
     distances = []
-    for coordinate, direction in zip(point, vector):
+    for coordinate, direction, limit in zip(point, vector, (OUTPUT_CELL, CELL)):
         if direction > 1e-6:
-            distances.append((CELL - 8 - coordinate) / direction)
+            distances.append((limit - 8 - coordinate) / direction)
         elif direction < -1e-6:
             distances.append((8 - coordinate) / direction)
     return max(1.0, min(value for value in distances if value > 0))
@@ -103,15 +105,33 @@ def remove_weapon(cell: Image.Image, mask: Image.Image, grip: tuple[float, float
     return removal
 
 
+def remove_left_boundary_overflow(cell: Image.Image) -> None:
+    """Remove weapon fragments wrapped in from the preceding source cell."""
+    alpha = cell.getchannel("A")
+    pixels = alpha.load()
+    pending = [(0, y) for y in range(CELL) if pixels[0, y]]
+    seen = set(pending)
+    while pending:
+        x, y = pending.pop()
+        pixels[x, y] = 0
+        for nx in range(max(0, x - 1), min(CELL, x + 2)):
+            for ny in range(max(0, y - 1), min(CELL, y + 2)):
+                if pixels[nx, ny] and (nx, ny) not in seen:
+                    seen.add((nx, ny))
+                    pending.append((nx, ny))
+    cell.putalpha(alpha)
+
+
 def make_weapon_layer(master: Image.Image, grip: tuple[float, float], unit: tuple[float, float], old_length: float) -> Image.Image:
+    grip = (grip[0] + PAD_X, grip[1])
     available = distance_to_edge(grip, unit)
-    full_height = min(170.0, max(105.0, old_length * 1.58), available / 0.78)
-    full_height = max(82.0, full_height)
+    full_height = min(210.0, max(145.0, old_length * 2.05), available / 0.78)
+    full_height = max(120.0, full_height)
     full_width = max(34, round(full_height * 0.36))
     size = (full_width, round(full_height))
     sword = master.resize(size, Image.Resampling.LANCZOS)
     grip_in_sword = (size[0] // 2, round(size[1] * 0.82))
-    layer = Image.new("RGBA", (CELL, CELL), (0, 0, 0, 0))
+    layer = Image.new("RGBA", (OUTPUT_CELL, CELL), (0, 0, 0, 0))
     layer.alpha_composite(sword, (round(grip[0] - grip_in_sword[0]), round(grip[1] - grip_in_sword[1])))
     rotation = math.degrees(math.atan2(-unit[0], -unit[1]))
     return layer.rotate(rotation, resample=Image.Resampling.BICUBIC, center=grip)
@@ -139,14 +159,18 @@ def make_interaction_patch(original: Image.Image, grip: tuple[float, float], row
 
 
 def compose_cell(body: Image.Image, weapon: Image.Image, interaction: Image.Image, z_order: str) -> Image.Image:
-    result = Image.new("RGBA", (CELL, CELL), (0, 0, 0, 0))
+    padded_body = Image.new("RGBA", (OUTPUT_CELL, CELL), (0, 0, 0, 0))
+    padded_body.alpha_composite(body, (PAD_X, 0))
+    padded_interaction = Image.new("RGBA", (OUTPUT_CELL, CELL), (0, 0, 0, 0))
+    padded_interaction.alpha_composite(interaction, (PAD_X, 0))
+    result = Image.new("RGBA", (OUTPUT_CELL, CELL), (0, 0, 0, 0))
     if z_order == "background":
         result.alpha_composite(weapon)
-        result.alpha_composite(body)
+        result.alpha_composite(padded_body)
     else:
-        result.alpha_composite(body)
+        result.alpha_composite(padded_body)
         result.alpha_composite(weapon)
-    result.alpha_composite(interaction)
+    result.alpha_composite(padded_interaction)
     return result
 
 
@@ -157,17 +181,21 @@ def main() -> int:
 
     master = Image.open(ROOT / "assets/master-diamond-sword-v1.png").convert("RGBA")
     master = master.crop(master.getchannel("A").getbbox())
-    weapon_sheet = Image.new("RGBA", (COLS * CELL, ROWS * CELL), (0, 0, 0, 0))
-    metadata: dict[str, object] = {"version": 1, "grid": [COLS, ROWS, CELL, CELL], "poses": []}
+    weapon_sheet = Image.new("RGBA", (COLS * OUTPUT_CELL, ROWS * CELL), (0, 0, 0, 0))
+    metadata: dict[str, object] = {"version": 2, "sourceGrid": [COLS, ROWS, CELL, CELL], "grid": [COLS, ROWS, OUTPUT_CELL, CELL], "framePaddingX": PAD_X, "poses": []}
 
     armor_data = {}
     for armor in ("bronze", "silver"):
         suffix = "-silver" if armor == "silver" else ""
         canonical = Image.open(ROOT / f"assets/hero-roman{suffix}-v1.png" if armor == "silver" else ROOT / "assets/hero-roman-v4.png").convert("RGBA")
         diamond = Image.open(ROOT / f"assets/hero-roman{suffix}-diamond-v1.png").convert("RGBA")
-        body_sheet = canonical.copy()
+        body_sheet = Image.new("RGBA", (COLS * OUTPUT_CELL, ROWS * CELL), (0, 0, 0, 0))
         interaction_sheet = Image.new("RGBA", body_sheet.size, (0, 0, 0, 0))
-        assembled = canonical.copy()
+        assembled = Image.new("RGBA", body_sheet.size, (0, 0, 0, 0))
+        for row in range(ROWS):
+            for frame in range(COLS):
+                box = (frame * CELL, row * CELL, (frame + 1) * CELL, (row + 1) * CELL)
+                assembled.alpha_composite(canonical.crop(box), (frame * OUTPUT_CELL + PAD_X, row * CELL))
         armor_data[armor] = (canonical, diamond, body_sheet, interaction_sheet, assembled)
 
     pose_cache = {}
@@ -179,7 +207,7 @@ def main() -> int:
             mask = blue_mask(guide, WEAPON_ROIS[(row, frame)])
             grip, unit, old_length = trajectory(mask, EXPECTED_GRIPS[(row, frame)])
             weapon = make_weapon_layer(master, grip, unit, old_length)
-            weapon_sheet.alpha_composite(weapon, (frame * CELL, row * CELL))
+            weapon_sheet.alpha_composite(weapon, (frame * OUTPUT_CELL, row * CELL))
             pose_cache[(row, frame)] = (grip, unit, old_length, weapon)
             metadata["poses"].append({
                 "row": row,
@@ -197,14 +225,17 @@ def main() -> int:
                 box = (frame * CELL, row * CELL, (frame + 1) * CELL, (row + 1) * CELL)
                 original = diamond.crop(box)
                 body = original.copy()
-                mask = blue_mask(original, WEAPON_ROIS[(row, frame)])
+                remove_left_boundary_overflow(body)
+                guide = bronze_diamond.crop(box)
+                mask = blue_mask(guide, WEAPON_ROIS[(row, frame)])
                 grip, unit, old_length, weapon = pose_cache[(row, frame)]
                 remove_weapon(body, mask, grip, unit, old_length)
                 interaction, rect = make_interaction_patch(original, grip, row)
-                body_sheet.alpha_composite(body, (frame * CELL, row * CELL))
-                interaction_sheet.alpha_composite(interaction, (frame * CELL, row * CELL))
+                body_sheet.alpha_composite(body, (frame * OUTPUT_CELL + PAD_X, row * CELL))
+                interaction_sheet.alpha_composite(interaction, (frame * OUTPUT_CELL + PAD_X, row * CELL))
                 cell = compose_cell(body, weapon, interaction, Z_ORDER[(row, frame)])
-                assembled.alpha_composite(cell, (frame * CELL, row * CELL))
+                assembled.paste((0, 0, 0, 0), (frame * OUTPUT_CELL, row * CELL, (frame + 1) * OUTPUT_CELL, (row + 1) * CELL))
+                assembled.alpha_composite(cell, (frame * OUTPUT_CELL, row * CELL))
                 interaction_rects[armor].append({"row": row, "frame": frame, "rect": rect, "reason": "restore grip hand above ornate guard"})
 
         body_path = ROOT / f"assets/characters/roman/body/{armor}-deweaponed.png"

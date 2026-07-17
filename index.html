@@ -28,6 +28,7 @@
           <span><kbd>Z</kbd> Pet companion</span>
           <span><kbd>Q</kbd> Shop</span>
           <span><kbd>M</kbd> Music</span>
+          <button id="pause-toggle" class="pause-toggle" type="button" aria-label="Pause game">Pause</button>
           <button id="creative-toggle" class="creative-toggle" type="button">Creative</button>
           <span><kbd>R</kbd> Restart</span>
         </div>
@@ -173,7 +174,8 @@
               <option value="2">III - Beast of Zama</option>
               <option value="3">IV - Carthage Citadel</option>
               <option value="4">V - The Walls of Carthage</option>
-              <option value="5">DEV - Ladder Lab</option>
+              <option value="5">VI - The Eagle's Ascent</option>
+              <option value="6">DEV - Ladder Lab</option>
             </select>
           </label>
           <label class="creative-check"><input id="creative-invincible" type="checkbox" checked /> Invincible</label>
@@ -186,9 +188,18 @@
           <button id="creative-exit" type="button">Exit creative mode</button>
         </aside>
 
+        <div id="pause-screen" class="overlay pause-overlay" aria-hidden="true">
+          <div class="panel">
+            <span class="eyebrow">CAMPAIGN PAUSED</span>
+            <h2>Hold the line</h2>
+            <p>The battle is frozen until you are ready to continue.</p>
+            <button id="resume-button" type="button">Resume campaign</button>
+            <small>Press <strong>P</strong> or <strong>Escape</strong> to resume</small>
+          </div>
+        </div>
         <div id="start-screen" class="overlay visible">
           <div class="panel">
-            <span class="eyebrow">THREE-LEVEL CAMPAIGN</span>
+            <span class="eyebrow">SIX-LEVEL CAMPAIGN</span>
             <h2>Roman Steps</h2>
             <p>March to Zama, master sword, shield, and sling, then face Carthage's war elephant.</p>
             <button id="start-button">Begin campaign <span>?</span></button>
@@ -211,11 +222,12 @@
         <span id="game-status" class="status-dot"><i></i> Ready to play</span>
       </footer>
     </main>
-    <script src="equipment-manifest.js"></script>
-    <script src="mini-elephant-manifest.js"></script>
-    <script src="campaign.js"></script>
-    <script src="engine.js"></script>
-    <script src="renderer.js"></script>
+    <script src="equipment-manifest.js?v=20260717-dev-level-fix"></script>
+    <script src="mini-elephant-manifest.js?v=20260717-dev-level-fix"></script>
+    <script src="enemy-sprite-manifest.js?v=20260717-dev-level-fix"></script>
+    <script src="campaign.js?v=20260717-dev-level-fix"></script>
+    <script src="engine.js?v=20260717-dev-level-fix"></script>
+    <script src="renderer.js?v=20260717-dev-level-fix"></script>
   </body>
 </html>
 

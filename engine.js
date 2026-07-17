@@ -2,21 +2,29 @@
   "use strict";
   const L = window.CAMPAIGN_LEVELS, audio = window.RomanAudio;
   const key = Object.create(null), G = window.RS = {};
-  const MAX_AMMO=30,PET_DAMAGE=.6;
+  const MAX_AMMO=30,PET_DAMAGE=.6,WAR_ELEPHANT_HP=26.8;
   const creative = { active:false, invincible:true, flying:true, infiniteMoney:true, infiniteStones:true, extendedAnimation:false, dayNightCycle:false, menuOpen:true };
   const shop = { open:false, near:false, message:"" };
   const inventory = { open:false, message:"" };
   const items = { selected:"sling" };
   const pet = {owned:false,salamanderOwned:false,chickenOwned:false,kind:"salamander",mode:"passive",salamanderMode:"passive",chickenMode:"passive",x:0,y:0,w:70,h:38,vx:0,vy:0,grounded:false,onPlatform:null,facing:-1,anim:0,attacking:0,attackCooldown:0,eggLaunched:true,eggTargetX:0,eggTargetY:0,flash:0,petted:0,fade:1,invuln:0,knockedByEnemy:false,respawnTimer:0,dropTimer:0,dropPlatform:null};
   const P = {
-    x:120,y:400,w:48,h:96,vx:0,vy:0,facing:1,grounded:false,onPlatform:null,dropTimer:0,dropPlatform:null,ledge:null,ledgeTimer:0,grabBuffer:0,
+    x:120,y:400,w:48,h:96,vx:0,vy:0,facing:1,grounded:false,onPlatform:null,dropTimer:0,dropPlatform:null,vaultDown:0,ledge:null,ledgeTimer:0,grabBuffer:0,
     hp:5,maxHp:5,invuln:0,lock:0,attack:0,attackId:0,slingAnim:0,petting:0,hasDiamondSword:false,hasMasterDiamondSword:false,weapon:"gladius",
-    shielding:false,shieldHits:0,shieldCooldown:0,shieldRegen:0,shieldRaise:0,coyote:0,jumpDebounce:0,hasSling:false,ammo:0,maxAmmo:MAX_AMMO,coins:0,bananas:0,bananaCooldown:0,hasSilverArmor:false,silverArmor:false,armorPoints:0,walk:0,climbing:false,ladder:null,climbAnim:0,getup:0,getupStartX:0,getupStartY:0,getupTargetX:0,getupTargetY:0,getupPlatform:null,ladderExitLock:0,
+    shielding:false,shieldHits:0,shieldCooldown:0,shieldRegen:0,shieldRaise:0,coyote:0,jumpDebounce:0,jumpBuffer:0,hasSling:false,ammo:0,maxAmmo:MAX_AMMO,coins:0,bananas:0,bananaCooldown:0,hasSilverArmor:false,silverArmor:false,armorPoints:0,walk:0,climbing:false,ladder:null,climbAnim:0,getup:0,getupStartX:0,getupStartY:0,getupTargetX:0,getupTargetY:0,getupPlatform:null,ladderExitLock:0,
     checkpoint:{x:120,y:400}
   };
   let li=0, level=L[0], platforms=[],enemies=[],coins=[],stones=[],bananas=[],sling=null;
-  let bolts=[],shots=[],eggShots=[],particles=[],shockwaves=[],boss=null,bossPhase=0,running=false,next=null;
-  let elapsed=0,shakeTime=0,shakePower=0,tremor=0,banner=null,camera=0;
+  let bolts=[],shots=[],eggShots=[],particles=[],shockwaves=[],boss=null,bossPhase=0,running=false,paused=false,next=null;
+  let elapsed=0,shakeTime=0,shakePower=0,tremor=0,banner=null,camera=0,cameraY=0;
+  const creativeLevelSelect=document.getElementById("creative-level");
+  const levelNumerals=["I","II","III","IV","V","VI","VII","VIII","IX","X"];
+  function syncCreativeLevelOptions(){
+    const selected=creativeLevelSelect.value;creativeLevelSelect.replaceChildren(...L.map((entry,index)=>{
+      const option=document.createElement("option");option.value=String(index);option.textContent=entry.devOnly?`DEV - ${entry.name}`:`${levelNumerals[index]||index+1} - ${entry.name}`;return option;
+    }));creativeLevelSelect.value=L[selected]?selected:"0";
+  }
+  syncCreativeLevelOptions();
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const HP_STD_RATIO=.0667;
   function gaussianHp(mean){let u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();const z=clamp(Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v),-3,3),value=mean*(1+z*HP_STD_RATIO);return Math.max(.05,Math.round(value*1000)/1000)}
@@ -31,37 +39,43 @@
     player:{get:()=>P},level:{get:()=>level},levelIndex:{get:()=>li},platforms:{get:()=>platforms},ladders:{get:()=>level.ladders||[]},
     enemies:{get:()=>enemies},coins:{get:()=>coins},stones:{get:()=>stones},bananas:{get:()=>bananas},sling:{get:()=>sling},
     bolts:{get:()=>bolts},shots:{get:()=>shots},eggShots:{get:()=>eggShots},particles:{get:()=>particles},shockwaves:{get:()=>shockwaves},boss:{get:()=>boss},
-    bossPhase:{get:()=>bossPhase},running:{get:()=>running},elapsed:{get:()=>elapsed},
-    banner:{get:()=>banner},camera:{get:()=>camera},shakeTime:{get:()=>shakeTime},shakePower:{get:()=>shakePower},creative:{get:()=>creative},shop:{get:()=>shop},inventory:{get:()=>inventory},items:{get:()=>items},pet:{get:()=>pet}
+    bossPhase:{get:()=>bossPhase},running:{get:()=>running},paused:{get:()=>paused},elapsed:{get:()=>elapsed},
+    banner:{get:()=>banner},camera:{get:()=>camera},cameraY:{get:()=>cameraY},shakeTime:{get:()=>shakeTime},shakePower:{get:()=>shakePower},creative:{get:()=>creative},shop:{get:()=>shop},inventory:{get:()=>inventory},items:{get:()=>items},pet:{get:()=>pet}
   });
   Object.assign(G,{clamp,overlap,cx});
 
   function loadLevel(index,fresh=false){
+    const candidate=L[index];
+    if(!Number.isInteger(index)||index<0||!candidate||!candidate.start||!Array.isArray(candidate.platforms)){
+      console.error("Cannot load level index",index,"from",L.length,"available levels");
+      creativeLevelSelect.value=String(li);banner={text:"LEVEL UNAVAILABLE",sub:"Reload the game to refresh level data",time:2.6};return false;
+    }
+    setPaused(false);
     setShop(false);setInventory(false);
-    li=index;level=L[index];
+    li=index;level=candidate;
     platforms=level.platforms.map(p=>({...p,prevX:p.x,prevY:p.y}));
-    enemies=level.enemies.map(enemy);
-    coins=level.coins.map(([x,y])=>({x,y,w:24,h:24,taken:false,bob:Math.random()*6}));
-    stones=level.stones.map(([x,y])=>({x,y,w:25,h:20,taken:false,respawn:0,bob:Math.random()*5}));
-    bananas=(level.bananas||[]).map(([x,y])=>({x,y,w:46,h:54,taken:false,bob:Math.random()*6}));
+    enemies=(level.enemies||[]).map(enemy);
+    coins=(level.coins||[]).map(([x,y])=>({x,y,w:24,h:24,taken:false,bob:Math.random()*6}));
+    stones=(level.stones||[]).map(([x,y])=>({x,y,w:25,h:20,taken:false,respawn:0,bob:Math.random()*5}));
+    bananas=(level.bananas||[]).map(([x,y])=>({x,y,w:46,h:54,taken:false,bob:Math.random()*6,renewable:!!level.bananaRespawn,respawn:0,respawnDelay:level.bananaRespawn||0}));
     sling=level.sling?{...level.sling,w:42,h:46,taken:false}:null;
     bolts=[];shots=[];eggShots=[];particles=[];shockwaves=[];boss=level.boss?newBoss():null;bossPhase=level.boss?1:0;
-    tremor=level.shakeEvery||0;shakeTime=0;camera=0;banner={text:level.name,sub:level.subtitle,time:2.6};
+    tremor=level.shakeEvery||0;shakeTime=0;camera=0;cameraY=level.height?Math.max(0,level.height-720/(level.zoom||1)):720-720/(level.zoom||1);banner={text:level.name,sub:level.subtitle,time:2.6};
     if(fresh){P.coins=0;P.hasSling=false;P.ammo=0;P.hasSilverArmor=false;P.silverArmor=false;P.armorPoints=0;P.bananas=0;P.bananaCooldown=0;P.hasDiamondSword=false;P.hasMasterDiamondSword=false;P.weapon="gladius";pet.owned=false;pet.salamanderOwned=false;pet.chickenOwned=false;pet.kind="salamander";pet.mode="passive";pet.salamanderMode="passive";pet.chickenMode="passive";items.selected="sling"}pet.petted=0;
     if(index>=2)P.hasSling=true;if(creative.active){P.hasSling=true;if(creative.infiniteStones)P.ammo=MAX_AMMO}
-    Object.assign(P,{x:level.start.x,y:level.start.y,vx:0,vy:0,hp:5,invuln:0,lock:0,attack:0,slingAnim:0,petting:0,shielding:false,shieldHits:0,shieldCooldown:0,shieldRegen:0,shieldRaise:0,coyote:0,jumpDebounce:0,grounded:false,onPlatform:null,dropTimer:0,dropPlatform:null,ledge:null,ledgeTimer:0,grabBuffer:0,climbing:false,ladder:null,climbAnim:0,getup:0,getupPlatform:null,ladderExitLock:0});
+    Object.assign(P,{x:level.start.x,y:level.start.y,vx:0,vy:0,hp:5,invuln:0,lock:0,attack:0,slingAnim:0,petting:0,shielding:false,shieldHits:0,shieldCooldown:0,shieldRegen:0,shieldRaise:0,coyote:0,jumpDebounce:0,jumpBuffer:0,grounded:false,onPlatform:null,dropTimer:0,dropPlatform:null,vaultDown:0,ledge:null,ledgeTimer:0,grabBuffer:0,climbing:false,ladder:null,climbAnim:0,getup:0,getupPlatform:null,ladderExitLock:0});
     if(P.silverArmor)P.armorPoints=2;if(pet.owned)placePetNearPlayer();P.checkpoint={...level.start};
     document.getElementById("level-subtitle").textContent=`${level.subtitle} � ${level.name}`;
     document.getElementById("game-status").lastChild.textContent=` Legionary � ${level.name}`;
-    document.getElementById("message-screen").classList.remove("visible");document.getElementById("creative-level").value=String(index);updateItemBar();updateDevControls();next=null;
+    document.getElementById("message-screen").classList.remove("visible");creativeLevelSelect.value=String(index);updateItemBar();updateDevControls();next=null;return true;
   }
-  function newBoss(){const hp=gaussianHp(40);return{x:1710,y:342,w:330,h:248,hp,maxHp:hp,baseHp:40,alive:true,deathFade:1,facing:-1,state:"idle",timer:1.25,index:0,anim:0,throwCD:1.2,flash:0,stomped:false,hit:false,petHit:false,lastAttack:-1}}
+  function newBoss(){const hp=gaussianHp(WAR_ELEPHANT_HP);return{x:1710,y:342,w:330,h:248,hp,maxHp:hp,baseHp:WAR_ELEPHANT_HP,alive:true,deathFade:1,facing:-1,state:"idle",timer:1.25,index:0,anim:0,throwCD:1.2,flash:0,stomped:false,hit:false,petHit:false,lastAttack:-1}}
   function start(){audio.ensure();loadLevel(0,true);running=true;document.getElementById("start-screen").classList.remove("visible")}
   function complete(){
     if(!running)return;running=false;next=li+1;
     document.getElementById("message-eyebrow").textContent=`PROVINCE ${li+1} COMPLETE`;
-    const titles=["The road opens!","The beast awaits.","The beast has fallen!","The final siege begins!"];
-    const texts=["Via Aurelia is secure. Continue toward Zama.","You found the sling. Now face the Beast of Zama.","The elephant is defeated. Fight onward through the Carthage Citadel.","Carthage Citadel is breached. Storm the final walls."];
+    const titles=["The road opens!","The beast awaits.","The beast has fallen!","The final siege begins!","The heights await!"];
+    const texts=["Via Aurelia is secure. Continue toward Zama.","You found the sling. Now face the Beast of Zama.","The elephant is defeated. Fight onward through the Carthage Citadel.","Carthage Citadel is breached. Storm the final walls.","The walls are breached. Climb the high aqueduct and claim the heights."];
     document.getElementById("message-title").textContent=titles[li]||"Province secured!";
     document.getElementById("message-text").textContent=texts[li]||"The legion advances.";
     document.getElementById("restart-button").innerHTML="Continue campaign <span>?</span>";
@@ -71,7 +85,7 @@
     running=false;next=0;
     document.getElementById("message-eyebrow").textContent="CAMPAIGN COMPLETE";
     document.getElementById("message-title").textContent="Roma Victor!";
-    document.getElementById("message-text").textContent=`The walls of Carthage have fallen. Rome is victorious. You recovered ${P.coins} denarii.`;
+    document.getElementById("message-text").textContent=`The heights of Carthage are secured. Rome is victorious. You recovered ${P.coins} denarii.`;
     document.getElementById("restart-button").innerHTML="March again <span>?</span>";
     document.getElementById("message-screen").classList.add("visible");
   }
@@ -79,6 +93,15 @@
   const shopPanel=document.getElementById("shop-panel"),shopDenarii=document.getElementById("shop-denarii"),shopAmmo=document.getElementById("shop-ammo"),shopBuyStone=document.getElementById("shop-buy-stone"),shopArmorStatus=document.getElementById("shop-armor-status"),shopBuyArmor=document.getElementById("shop-buy-armor"),shopDiamondStatus=document.getElementById("shop-diamond-status"),shopBuyDiamond=document.getElementById("shop-buy-diamond"),shopMasterDiamondStatus=document.getElementById("shop-master-diamond-status"),shopBuyMasterDiamond=document.getElementById("shop-buy-master-diamond"),shopPetStatus=document.getElementById("shop-pet-status"),shopBuyPet=document.getElementById("shop-buy-pet"),shopChickenStatus=document.getElementById("shop-chicken-status"),shopBuyChicken=document.getElementById("shop-buy-chicken"),shopBananaStatus=document.getElementById("shop-banana-status"),shopBuyBanana=document.getElementById("shop-buy-banana"),shopFeedback=document.getElementById("shop-feedback");
   const itemBar=document.getElementById("item-bar"),itemButtons=[...document.querySelectorAll(".item-slot")],itemSlingStatus=document.getElementById("item-sling-status"),itemPetMode=document.getElementById("item-pet-mode"),itemChickenMode=document.getElementById("item-chicken-mode"),itemBananaStatus=document.getElementById("item-banana-status");
   const inventoryPanel=document.getElementById("inventory-panel"),inventoryButtons=[...document.querySelectorAll(".equipment-card")],inventoryFeedback=document.getElementById("inventory-feedback"),equipGladiusStatus=document.getElementById("equip-gladius-status"),equipDiamondStatus=document.getElementById("equip-diamond-status"),equipMasterDiamondStatus=document.getElementById("equip-master-diamond-status"),equipBronzeStatus=document.getElementById("equip-bronze-status"),equipSilverStatus=document.getElementById("equip-silver-status");
+  const pauseScreen=document.getElementById("pause-screen"),pauseToggle=document.getElementById("pause-toggle"),resumeButton=document.getElementById("resume-button");
+  function setPaused(on){
+    paused=!!on&&running&&!shop.open&&!inventory.open;
+    for(const k in key)key[k]=false;P.shielding=false;
+    pauseScreen.classList.toggle("visible",paused);pauseScreen.setAttribute("aria-hidden",String(!paused));
+    pauseToggle.classList.toggle("active",paused);pauseToggle.textContent=paused?"Resume":"Pause";pauseToggle.setAttribute("aria-label",paused?"Resume game":"Pause game");
+    if(paused)document.getElementById("game-status").lastChild.textContent=" Campaign paused";
+    else if(running)document.getElementById("game-status").lastChild.textContent=" Legionary - "+level.name;
+  }
   function shopIsNear(){
     const s=level.shop;if(!s)return false;
     return Math.abs(cx(P)-(s.x+s.w/2))<360&&Math.abs((P.y+P.h)-(s.y+s.h))<150;
@@ -268,23 +291,28 @@
   creativeToggle.addEventListener("click",toggleCreativePanel);
   creativeCollapse.addEventListener("click",()=>setCreativeMenu(!creative.menuOpen));
   document.getElementById("creative-exit").addEventListener("click",()=>setCreative(false));
-  document.getElementById("creative-level").addEventListener("change",e=>{loadLevel(Number(e.target.value));running=true;P.hasSling=true;if(creative.infiniteStones)P.ammo=MAX_AMMO});
+  creativeLevelSelect.addEventListener("change",e=>{if(!loadLevel(Number(e.target.value)))return;running=true;P.hasSling=true;if(creative.infiniteStones)P.ammo=MAX_AMMO});
   document.getElementById("creative-invincible").addEventListener("change",e=>creative.invincible=e.target.checked);
   document.getElementById("creative-flying").addEventListener("change",e=>creative.flying=e.target.checked);
   creativeExtendedToggle.addEventListener("change",e=>setExtendedAnimation(e.target.checked));
   document.getElementById("creative-infinite-money").addEventListener("change",e=>{creative.infiniteMoney=e.target.checked;if(shop.open)updateShopUI()});
   document.getElementById("creative-infinite-stones").addEventListener("change",e=>{creative.infiniteStones=e.target.checked;if(e.target.checked)P.ammo=MAX_AMMO;updateItemBar();if(shop.open)updateShopUI()});
   document.getElementById("creative-day-night").addEventListener("change",e=>creative.dayNightCycle=e.target.checked);
+  pauseToggle.addEventListener("click",()=>setPaused(!paused));
+  resumeButton.addEventListener("click",()=>setPaused(false));
   document.getElementById("start-button").addEventListener("click",start);
   document.getElementById("restart-button").addEventListener("click",()=>{audio.ensure();const fresh=next===0;loadLevel(next??li,fresh);running=true});
   addEventListener("keydown",e=>{
-    const k=e.key.toLowerCase();key[k]=true;
+    const k=e.key.toLowerCase();
+    if(paused){if((k==="p"||k==="escape")&&!e.repeat)setPaused(false);e.preventDefault();return}
+    key[k]=true;
     if(shop.open){key[k]=false;if((k==="q"||k==="escape")&&!e.repeat)setShop(false);e.preventDefault();return}
     if(inventory.open){key[k]=false;if((k==="i"||k==="escape")&&!e.repeat)setInventory(false);e.preventDefault();return}
+    if((k==="p"||k==="escape")&&!e.repeat){key[k]=false;e.preventDefault();setPaused(true);return}
     if(k==="i"&&!e.repeat){key[k]=false;e.preventDefault();setInventory(true);return}
     if(k==="q"&&!e.repeat&&shopIsNear()){key[k]=false;e.preventDefault();setShop(true);return}
     if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(k))e.preventDefault();
-    if((k==="w"||k==="arrowup")&&!e.repeat){key.jump=true;if(!P.grounded&&!P.climbing&&P.getup<=0)P.grabBuffer=.18}
+    if((k==="w"||k==="arrowup")&&!e.repeat){P.jumpBuffer=.16;if(!P.grounded&&!P.climbing&&P.getup<=0)P.grabBuffer=.18}
     if(k==="arrowdown"&&!e.repeat)key.drop=true;
     if(k===" "&&!e.repeat)startAttack();
     if((k==="1"||k==="2"||k==="3"||k==="4")&&!e.repeat)selectItem(k==="1"?"sling":k==="2"?"pet":k==="3"?"chicken":"banana");
@@ -365,10 +393,10 @@
     if(pet.respawnTimer>0){pet.respawnTimer=Math.max(0,pet.respawnTimer-dt);if(pet.respawnTimer===0)placePetNearPlayer(true);return}
     pet.fade=Math.min(1,pet.fade+dt*2.35);pet.invuln=Math.max(0,pet.invuln-dt);pet.attackCooldown=Math.max(0,pet.attackCooldown-dt);pet.attacking=Math.max(0,pet.attacking-dt);pet.flash=Math.max(0,pet.flash-dt);pet.petted=Math.max(0,pet.petted-dt);pet.dropTimer=Math.max(0,pet.dropTimer-dt);if(pet.dropTimer===0)pet.dropPlatform=null;if(pet.kind==="chicken"&&pet.attacking>0&&!pet.eggLaunched&&pet.attacking<.48){spawnPetEgg(pet.eggTargetX,pet.eggTargetY);pet.eggLaunched=true}
     if(pet.petted>0){pet.vx=0;pet.attacking=0;pet.anim+=dt*10;return}
-    const outOfFrame=pet.x+pet.w<camera-90||pet.x>camera+1370||pet.y>770;if(pet.knockedByEnemy&&outOfFrame){dismissPet();return}
-    if(pet.knockedByEnemy){pet.x+=pet.vx*dt;pet.vx*=Math.pow(.42,dt);pet.vy=Math.min(980,pet.vy+1700*dt);movePetY(pet.vy*dt);pet.anim+=dt*7;const launchedOut=pet.x+pet.w<camera-90||pet.x>camera+1370||pet.y>770;if(launchedOut){dismissPet();return}if(pet.grounded&&pet.invuln===0)pet.knockedByEnemy=false;return}
+    const viewH=720/(level.zoom||1),outOfFrame=pet.x+pet.w<camera-90||pet.x>camera+1370||pet.y+pet.h<cameraY-90||pet.y>cameraY+viewH+90;if(pet.knockedByEnemy&&outOfFrame){dismissPet();return}
+    if(pet.knockedByEnemy){pet.x+=pet.vx*dt;pet.vx*=Math.pow(.42,dt);pet.vy=Math.min(980,pet.vy+1700*dt);movePetY(pet.vy*dt);pet.anim+=dt*7;const launchedOut=pet.x+pet.w<camera-90||pet.x>camera+1370||pet.y+pet.h<cameraY-90||pet.y>cameraY+viewH+90;if(launchedOut){dismissPet();return}if(pet.grounded&&pet.invuln===0)pet.knockedByEnemy=false;return}
     const distanceToPlayer=Math.hypot(cx(P)-cx(pet),(P.y+P.h)-(pet.y+pet.h));
-    if(distanceToPlayer>590||Math.abs((P.y+P.h)-(pet.y+pet.h))>285||pet.y>820){placePetNearPlayer(true);return}
+    if(distanceToPlayer>590||Math.abs((P.y+P.h)-(pet.y+pet.h))>285||pet.y>(level.height||720)+100){placePetNearPlayer(true);return}
     const target=petCombatTarget(),targetBottom=target?target.y+target.h:P.y+P.h,targetBelow=!!target&&targetBottom>pet.y+pet.h+75,followPlayerDrop=!target&&P.dropTimer>0&&P.dropPlatform&&pet.grounded&&pet.onPlatform===P.dropPlatform,targetDir=target?(Math.sign(cx(target)-cx(pet))||pet.facing):pet.facing,followX=target?(pet.kind==="chicken"?cx(target)-targetDir*235:cx(target)):cx(P)-P.facing*82,dx=followX-cx(pet);
     let moveDir=Math.abs(dx)>(target?43:34)?Math.sign(dx):0;
     if(targetBelow&&!moveDir&&pet.onPlatform){const left=pet.x-pet.onPlatform.x,right=pet.onPlatform.x+pet.onPlatform.w-(pet.x+pet.w);moveDir=left<right?-1:1}
@@ -411,7 +439,7 @@
     const p=ledge.platform,side=ledge.side,startX=side>0?p.x-P.w-2:p.x+p.w+2,startY=p.y-P.h+64;
     P.x=startX;P.y=startY;P.facing=side;P.getup=.66*animFactor();P.getupStartX=startX;P.getupStartY=startY;
     P.getupTargetX=clamp(side>0?p.x+8:p.x+p.w-P.w-8,p.x+6,p.x+p.w-P.w-6);P.getupTargetY=p.y-P.h;P.getupPlatform=p;
-    P.vx=0;P.vy=0;P.grounded=false;P.onPlatform=null;P.shielding=false;P.attack=0;P.slingAnim=0;P.ledge=null;P.ledgeTimer=0;P.grabBuffer=0;key.jump=false;return true;
+    P.vx=0;P.vy=0;P.grounded=false;P.onPlatform=null;P.shielding=false;P.attack=0;P.slingAnim=0;P.ledge=null;P.ledgeTimer=0;P.grabBuffer=0;P.jumpBuffer=0;key.jump=false;return true;
   }
   function moveX(n){
     P.x+=n;
@@ -436,7 +464,7 @@
   }
 
   function updatePlayer(dt){
-    const wasGettingUp=P.getup>0;P.invuln=Math.max(0,P.invuln-dt);P.lock=Math.max(0,P.lock-dt);P.attack=Math.max(0,P.attack-dt);P.slingAnim=Math.max(0,P.slingAnim-dt);P.petting=Math.max(0,P.petting-dt);P.getup=Math.max(0,P.getup-dt);P.ladderExitLock=Math.max(0,P.ladderExitLock-dt);P.jumpDebounce=Math.max(0,P.jumpDebounce-dt);P.ledgeTimer=Math.max(0,P.ledgeTimer-dt);if(P.ledgeTimer===0)P.ledge=null;P.grabBuffer=Math.max(0,P.grabBuffer-dt);P.dropTimer=Math.max(0,P.dropTimer-dt);if(P.dropTimer===0)P.dropPlatform=null;P.shieldRaise=Math.max(0,P.shieldRaise-dt);P.coyote=P.grounded?.13:Math.max(0,P.coyote-dt);
+    const wasGettingUp=P.getup>0;P.invuln=Math.max(0,P.invuln-dt);P.lock=Math.max(0,P.lock-dt);P.attack=Math.max(0,P.attack-dt);P.slingAnim=Math.max(0,P.slingAnim-dt);P.petting=Math.max(0,P.petting-dt);P.getup=Math.max(0,P.getup-dt);P.vaultDown=Math.max(0,P.vaultDown-dt);P.ladderExitLock=Math.max(0,P.ladderExitLock-dt);P.jumpDebounce=Math.max(0,P.jumpDebounce-dt);P.jumpBuffer=Math.max(0,P.jumpBuffer-dt);P.ledgeTimer=Math.max(0,P.ledgeTimer-dt);if(P.ledgeTimer===0)P.ledge=null;P.grabBuffer=Math.max(0,P.grabBuffer-dt);P.dropTimer=Math.max(0,P.dropTimer-dt);if(P.dropTimer===0)P.dropPlatform=null;P.shieldRaise=Math.max(0,P.shieldRaise-dt);P.coyote=P.grounded?.13:Math.max(0,P.coyote-dt);
     const bananaTick=Math.ceil(P.bananaCooldown*10);P.bananaCooldown=Math.max(0,P.bananaCooldown-dt);if(Math.ceil(P.bananaCooldown*10)!==bananaTick)updateItemBar();
     const wasShieldRecovering=P.shieldCooldown>0;P.shieldCooldown=Math.max(0,P.shieldCooldown-dt);
     if(wasShieldRecovering&&P.shieldCooldown===0&&P.shieldHits>=4){P.shieldHits=0;P.shieldRegen=0}
@@ -444,43 +472,44 @@
       P.shieldRegen=Math.max(0,P.shieldRegen-dt);
       if(P.shieldRegen===0){P.shieldHits--;P.shieldRegen=P.shieldHits>0?4:0;burst(cx(P),P.y+42,"#79b7ac",4)}
     }
-    if(P.petting>0){key.drop=false;key.jump=false;P.vx=0;P.vy=0;P.shielding=false;pickups(dt);return}
+    if(P.petting>0){key.drop=false;key.jump=false;P.jumpBuffer=0;P.vx=0;P.vy=0;P.shielding=false;pickups(dt);return}
     P.shielding=!!key.s&&P.shieldCooldown===0&&P.attack===0&&P.slingAnim===0&&!P.climbing&&P.getup===0;
     const input=(key.d||key.arrowright?1:0)-(key.a||key.arrowleft?1:0),up=!!(key.w||key.arrowup),down=!!(key.s||key.arrowdown);
     const nearLadder=(level.ladders||[]).find(l=>cx(P)>=l.x-18&&cx(P)<=l.x+l.w+18&&P.y+P.h>=l.y-6&&P.y<l.y+l.h-8);
     if(!P.grounded&&!P.climbing&&P.getup===0&&P.ledgeTimer>0&&P.grabBuffer>0)beginLedgeGetup();
     const canEnterLadder=nearLadder&&(down||(up&&P.y+P.h>nearLadder.y+18));
-    if(!P.climbing&&P.getup===0&&P.ladderExitLock===0&&canEnterLadder){P.climbing=true;P.ladder=nearLadder;P.vx=0;P.vy=0;P.attack=0;P.slingAnim=0;P.shielding=false}
-    if(P.climbing){key.drop=false;key.jump=false;
+    if(!P.climbing&&P.getup===0&&P.ladderExitLock===0&&canEnterLadder){P.climbing=true;P.ladder=nearLadder;P.vaultDown=0;P.vx=0;P.vy=0;P.attack=0;P.slingAnim=0;P.shielding=false}
+    if(P.climbing){key.drop=false;key.jump=false;P.jumpBuffer=0;
       const l=P.ladder,vertical=(down?1:0)-(up?1:0);P.shielding=false;P.vx=0;P.vy=vertical*175;
       P.x+=(l.x+l.w/2-P.w/2-P.x)*clamp(dt*14,0,1);P.y+=P.vy*dt;if(vertical)P.climbAnim+=dt*8/animFactor();
       if(input&&!up&&!down){P.climbing=false;P.ladder=null;P.vx=input*190;P.vy=-80}
       else if(vertical<0&&P.y+P.h<=l.y+72){const ledge=platforms.find(p=>l.x+l.w>p.x&&l.x<p.x+p.w&&Math.abs(p.y-l.y)<3);if(ledge){const leftX=l.x-P.w-12,rightX=l.x+l.w+12,leftFits=leftX>=ledge.x+6,rightFits=rightX+P.w<=ledge.x+ledge.w-6,side=rightFits&&(!leftFits||P.facing>=0)?1:-1;P.climbing=false;P.ladder=null;P.getup=.66*animFactor();P.getupStartX=P.x;P.getupStartY=P.y;P.getupTargetX=clamp(side>0?rightX:leftX,ledge.x+6,ledge.x+ledge.w-P.w-6);P.getupTargetY=ledge.y-P.h;P.getupPlatform=ledge;P.vx=0;P.vy=0;P.grounded=false;P.onPlatform=null}}
       else if(vertical>0&&P.y>=l.y+l.h-P.h){P.climbing=false;P.ladder=null;P.y=l.y+l.h-P.h;P.vy=0}
-      if(P.climbing){key.drop=false;key.jump=false;pickups(dt);return}
+      if(P.climbing){key.drop=false;key.jump=false;P.jumpBuffer=0;pickups(dt);return}
     }
-    if(P.getup>0&&!wasGettingUp){key.drop=false;key.jump=false;pickups(dt);return}
-    if(wasGettingUp){key.drop=false;key.jump=false;const getupTotal=.66*animFactor(),t=clamp(1-P.getup/getupTotal,0,1),ease=t*t*(3-2*t);P.shielding=false;P.vx=0;P.vy=0;P.x=P.getupStartX+(P.getupTargetX-P.getupStartX)*ease;P.y=P.getupStartY+(P.getupTargetY-P.getupStartY)*ease;if(P.getup===0){P.x=P.getupTargetX;P.y=P.getupTargetY;P.grounded=true;P.onPlatform=P.getupPlatform;P.getupPlatform=null;P.ladderExitLock=.32;P.jumpDebounce=.1;P.coyote=.13}pickups(dt);return}
-    if(creative.active&&creative.flying){key.jump=false;key.drop=false;const vertical=(key.q||key.arrowdown?1:0)-(key.w||key.arrowup?1:0),flySpeed=key.shift?1248:420;P.vx=input*flySpeed;P.vy=vertical*flySpeed;P.x=clamp(P.x+P.vx*dt,0,level.width-P.w);P.y=clamp(P.y+P.vy*dt,20,610-P.h);P.grounded=false;P.onPlatform=null;if(Math.abs(P.vx)>18)P.walk+=dt*9/animFactor();pickups(dt);swordHit();return}
-    if(key.drop){const support=P.onPlatform;if(P.grounded&&support&&!support.ground){P.dropTimer=.32;P.dropPlatform=support;P.grounded=false;P.onPlatform=null;P.y+=7;P.vy=145;P.coyote=0}key.drop=false}
+    if(P.getup>0&&!wasGettingUp){key.drop=false;key.jump=false;P.jumpBuffer=0;pickups(dt);return}
+    if(wasGettingUp){key.drop=false;key.jump=false;P.jumpBuffer=0;const getupTotal=.66*animFactor(),t=clamp(1-P.getup/getupTotal,0,1),ease=t*t*(3-2*t);P.shielding=false;P.vx=0;P.vy=0;P.x=P.getupStartX+(P.getupTargetX-P.getupStartX)*ease;P.y=P.getupStartY+(P.getupTargetY-P.getupStartY)*ease;if(P.getup===0){P.x=P.getupTargetX;P.y=P.getupTargetY;P.grounded=true;P.onPlatform=P.getupPlatform;P.getupPlatform=null;P.ladderExitLock=.32;P.jumpDebounce=.1;P.coyote=.13}pickups(dt);return}
+    if(creative.active&&creative.flying){key.jump=false;key.drop=false;P.jumpBuffer=0;const vertical=(key.q||key.arrowdown?1:0)-(key.w||key.arrowup?1:0),flySpeed=key.shift?1248:420;P.vx=input*flySpeed;P.vy=vertical*flySpeed;P.x=clamp(P.x+P.vx*dt,0,level.width-P.w);P.y=clamp(P.y+P.vy*dt,20,(level.height||720)-P.h);P.grounded=false;P.onPlatform=null;if(Math.abs(P.vx)>18)P.walk+=dt*9/animFactor();pickups(dt);swordHit();return}
+    if(key.drop){const support=P.onPlatform;if(P.grounded&&support&&!support.ground){P.dropTimer=.42;P.dropPlatform=support;P.vaultDown=.34;P.grounded=false;P.onPlatform=null;P.y+=9;P.vx+=P.facing*110;P.vy=135;P.coyote=0}key.drop=false}
     if(P.lock<=0){const target=input*(P.shielding?105:320);P.vx+=(target-P.vx)*clamp(dt*11,0,1);if(input)P.facing=input;if(!input&&Math.abs(P.vx)<5)P.vx=0}
     if(P.shielding){const grip=P.grounded?(input?.32:.012):.16;P.vx*=Math.pow(grip,dt);if(P.grounded&&!input&&Math.abs(P.vx)<8)P.vx=0}
-    if(key.jump){if(P.jumpDebounce===0&&P.coyote>0&&!P.shielding){P.vy=-840;P.grounded=false;P.onPlatform=null;P.coyote=0;P.grabBuffer=0;P.ledge=null;P.ledgeTimer=0}key.jump=false}
+    if(P.jumpBuffer>0&&P.jumpDebounce===0&&P.coyote>0&&!P.shielding){P.jumpBuffer=0;P.vaultDown=0;P.vy=-840;P.grounded=false;P.onPlatform=null;P.coyote=0;P.grabBuffer=0;P.ledge=null;P.ledgeTimer=0}
     if(Math.abs(P.vx)>18&&P.grounded)P.walk+=dt*9/animFactor();
-    P.vy=Math.min(950,P.vy+1700*dt);const previousBottom=P.y+P.h,wasFalling=P.vy>80;moveX(P.vx*dt);moveY(P.vy*dt);if(wasFalling)stompEnemy(previousBottom);P.x=clamp(P.x,0,level.width-P.w);
-    if(P.y>900)die();pickups(dt);swordHit();if(!level.boss&&!level.devOnly&&!creative.active&&P.x+P.w>level.width-115){const remaining=level.requiresElephants?enemies.filter(e=>e.type==="miniElephant"&&e.alive).length:0;if(remaining){P.x=level.width-164-P.w;P.vx=Math.min(0,P.vx);banner={text:"GATE SEALED",sub:`Defeat ${remaining} mini-elephant${remaining===1?"":"s"} to pass`,time:1.25}}else if(level.campaignEnd)victory();else complete()}
+    P.vy=Math.min(950,P.vy+1700*dt);const previousBottom=P.y+P.h,wasFalling=P.vy>80;moveX(P.vx*dt);moveY(P.vy*dt);if(P.grounded)P.vaultDown=0;if(wasFalling)stompEnemy(previousBottom);P.x=clamp(P.x,0,level.width-P.w);
+    if(P.y>(level.height||720)+180)die();pickups(dt);swordHit();if(!level.boss&&!level.devOnly&&!creative.active){const summit=level.finish&&overlap(P,level.finish),gate=!level.finish&&P.x+P.w>level.width-115;if(summit||gate){const remaining=level.requiresElephants?enemies.filter(e=>e.type==="miniElephant"&&e.alive).length:0;if(remaining){if(gate){P.x=level.width-164-P.w;P.vx=Math.min(0,P.vx)}banner={text:"GATE SEALED",sub:`Defeat ${remaining} mini-elephant${remaining===1?"":"s"} to pass`,time:1.25}}else if(level.campaignEnd)victory();else complete()}}
   }
   function pickups(dt){
     for(const c of coins){c.bob+=dt*4;if(c.drop){c.vy+=900*dt;c.x+=c.vx*dt;c.y+=c.vy*dt;c.vx*=Math.pow(.3,dt);if(c.y>=550){c.y=550;c.vx=0;c.vy=0;c.drop=false}}if(!c.taken&&overlap(P,c)){c.taken=true;P.coins++;burst(c.x+12,c.y+12,"#d9a928",8);audio.play("pickup")}}
     for(const b of bananas){
       b.bob+=dt*3.2;if(b.drop){b.vy+=900*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;b.vx*=Math.pow(.3,dt);if(b.y>=550){b.y=550;b.vx=0;b.vy=0;b.drop=false}}
+      if(b.taken){if(b.renewable&&(b.respawn-=dt)<=0){b.taken=false;b.respawn=0}continue}
       if(!b.taken&&overlap(P,b)){
-        const first=P.bananas===0;b.taken=true;P.bananas++;if(first)items.selected="banana";
+        const first=P.bananas===0;b.taken=true;if(b.renewable)b.respawn=b.respawnDelay;P.bananas++;if(first)items.selected="banana";
         banner={text:"BANANA FOUND",sub:"Stored in item slot 4",time:1.5};burst(b.x+b.w/2,b.y+b.h/2,"#f1c83f",14);audio.play("pickup");updateItemBar();
       }
     }
     for(const s of stones){
-      s.bob+=dt*3;if(s.taken){if(li===2&&(s.respawn-=dt)<=0)s.taken=false;continue}
+      s.bob+=dt*3;if(s.taken){if(level.boss&&(s.respawn-=dt)<=0)s.taken=false;continue}
       if(P.ammo<MAX_AMMO&&overlap(P,s)){s.taken=true;s.respawn=3;P.ammo++;burst(s.x+10,s.y+8,"#87735f",5);audio.play("pickup");updateItemBar()}
     }
     if(sling&&!sling.taken&&overlap(P,sling)){sling.taken=true;P.hasSling=true;P.ammo=Math.max(P.ammo,3);items.selected="sling";updateItemBar();banner={text:"SLINGSHOT ACQUIRED",sub:"Press E � Carry up to 30 stones",time:3.5};burst(sling.x+20,sling.y+20,"#dfb34d",20);audio.play("pickup")}
@@ -507,9 +536,9 @@
     shake(.22,o.horse?10:5);burst(cx(P),P.y+36,"#a72a30",10);audio.play("hit");if(P.hp<=0)die();return true;
   }
   function die(){
-    Object.assign(P,{hp:5,x:P.checkpoint.x,y:P.checkpoint.y,vx:0,vy:0,invuln:1.4,lock:0,shielding:false,attack:0,petting:0,climbing:false,ladder:null,getup:0,getupPlatform:null,ladderExitLock:0,jumpDebounce:0,dropTimer:0,dropPlatform:null,ledge:null,ledgeTimer:0,grabBuffer:0});
+    Object.assign(P,{hp:5,x:P.checkpoint.x,y:P.checkpoint.y,vx:0,vy:0,invuln:1.4,lock:0,shielding:false,attack:0,petting:0,climbing:false,ladder:null,getup:0,getupPlatform:null,ladderExitLock:0,jumpDebounce:0,jumpBuffer:0,dropTimer:0,dropPlatform:null,vaultDown:0,ledge:null,ledgeTimer:0,grabBuffer:0});
     if(P.silverArmor)P.armorPoints=2;
-    bolts=[];banner={text:"LEGIONARY FALLEN",sub:"Back into formation",time:1.8};camera=clamp(P.x-448,0,Math.max(0,level.width-1280));shake(.45,12);
+    bolts=[];banner={text:"LEGIONARY FALLEN",sub:"Back into formation",time:1.8};camera=clamp(P.x-448,0,Math.max(0,level.width-1280));cameraY=level.height?Math.max(0,level.height-720/(level.zoom||1)):720-720/(level.zoom||1);shake(.45,12);
   }
   function tossDenarii(e,count){
     for(let i=0;i<count;i++){
@@ -643,9 +672,10 @@ function updateEnemies(dt){
     else if(e.state==="attack"){if(e.timer<.35&&e.timer>.12){const h={x:e.dir>0?e.x+e.w-4:e.x-76,y:e.y+5,w:80,h:70};if(!e.hit&&overlap(h,P)){hurt(cx(e),{knockback:480,shieldKnockback:555,lift:-360});e.hit=true}if(!e.petHit&&petCanBeHit()&&overlap(h,pet)){hurtPet(cx(e),{knockback:480,lift:-360});e.petHit=true}}if(e.timer<=0){e.state="recover";e.timer=.65;e.cooldown=.75}}
     else if(["recover","block"].includes(e.state)&&e.timer<=0)e.state="patrol";
   }
-  function spawnBolt(x,y,tx,ty,speed=560){const dx=tx-x,dir=Math.sign(dx)||1,t=Math.max(.35,Math.abs(dx)/speed);bolts.push({x,y,w:34,h:9,vx:dir*speed,vy:(ty-y-.5*520*t*t)/t,life:3.2,angle:0})}
+  const JAVELIN_GRAVITY=42;
+  function spawnBolt(x,y,tx,ty,speed=560){speed*=.67*.67;const dx=tx-x,dir=Math.sign(dx)||1,t=Math.max(.35,Math.abs(dx)/speed),w=51,h=13.5;bolts.push({x:x-w/2,y:y-h/2,w,h,vx:dir*speed,vy:(ty-y-.5*JAVELIN_GRAVITY*t*t)/t,life:Math.max(4.8,t+1.2),angle:0})}
   function updateProjectiles(dt){
-    for(const b of bolts){b.life-=dt;b.vy+=520*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;b.angle=Math.atan2(b.vy,b.vx);if(b.life>0&&overlap(b,P)){hurt(b.x,{knockback:330,shieldKnockback:450,lift:-290});b.life=0}if(b.life>0&&petCanBeHit()&&overlap(b,pet)){hurtPet(b.x,{knockback:330,lift:-290});b.life=0}if(b.y>660||b.x< -100||b.x>level.width+100)b.life=0}bolts=bolts.filter(b=>b.life>0);
+    for(const b of bolts){b.life-=dt;b.vy+=JAVELIN_GRAVITY*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;b.angle=Math.atan2(b.vy,b.vx);if(b.life>0&&overlap(b,P)){hurt(b.x,{knockback:330,shieldKnockback:450,lift:-290});b.life=0}if(b.life>0&&petCanBeHit()&&overlap(b,pet)){hurtPet(b.x,{knockback:330,lift:-290});b.life=0}if(b.y>660||b.x< -100||b.x>level.width+100)b.life=0}bolts=bolts.filter(b=>b.life>0);
     for(const s of shots){s.life-=dt;s.vy+=430*dt;s.x+=s.vx*dt;s.y+=s.vy*dt;let used=false;for(const e of enemies)if(!used&&e.alive&&overlap(s,e)){damageEnemy(e,attackDamage(),s.x,390);used=true}if(!used&&boss?.alive&&overlap(s,boss)){damageBoss(attackDamage(),s.x);used=true}if(used||s.y>640||s.x<0||s.x>level.width)s.life=0}shots=shots.filter(s=>s.life>0);
     for(const egg of eggShots){egg.life-=dt;egg.vy+=560*dt;egg.x+=egg.vx*dt;egg.y+=egg.vy*dt;egg.angle+=dt*(egg.vx>=0?7:-7);let used=false;for(const e of enemies)if(!used&&e.alive&&overlap(egg,e)){damageEnemy(e,PET_DAMAGE,egg.x,150);used=true}if(!used&&boss?.alive&&overlap(egg,boss)){damageBoss(PET_DAMAGE,egg.x);used=true}if(used){burst(egg.x+9,egg.y+11,"#eee7c9",9);audio.play("hit")}if(used||egg.y>660||egg.x<0||egg.x>level.width)egg.life=0}eggShots=eggShots.filter(egg=>egg.life>0);
   }
@@ -696,6 +726,7 @@ function updateEnemies(dt){
     }
   }
   function update(dt){
+    if(paused)return;
     elapsed+=dt;if(!running)return;
     if(creative.active&&creative.infiniteStones)P.ammo=MAX_AMMO;
     shop.near=shopIsNear();if(shop.open||inventory.open)return;
@@ -705,7 +736,7 @@ function updateEnemies(dt){
     movePlatforms(dt);updatePlayer(dt);updatePet(dt);updateEnemies(dt);updateBoss(dt);updateShockwaves(dt);updateProjectiles(dt);
     for(const p of particles){p.life-=dt;p.vy+=480*dt;p.x+=p.vx*dt;p.y+=p.vy*dt}particles=particles.filter(p=>p.life>0);
     if(level.boss&&bossPhase===2&&enemies.every(e=>!e.alive)&&!creative.active){if(level.campaignEnd)victory();else complete()}
-    const viewW=1280/(level.zoom||1);camera+=(clamp(cx(P)-viewW*.38,0,Math.max(0,level.width-viewW))-camera)*clamp(dt*5,0,1);
+    const zoom=level.zoom||1,viewW=1280/zoom,viewH=720/zoom;camera+=(clamp(cx(P)-viewW*.38,0,Math.max(0,level.width-viewW))-camera)*clamp(dt*5,0,1);const targetY=level.height?clamp(P.y+P.h*.5-viewH*.58,0,Math.max(0,level.height-viewH)):720-viewH;cameraY+=(targetY-cameraY)*clamp(dt*5,0,1);
   }
   Object.assign(G,{loadLevel,update,hurt,damageBoss,startAttack,throwStone,startPetting});
   loadLevel(0,true);

@@ -1,0 +1,216 @@
+{
+  "grid": {
+    "columns": 6,
+    "rows": 2,
+    "cellWidth": 256,
+    "cellHeight": 256
+  },
+  "gutter": 10,
+  "sharedScale": 0.7283950617283951,
+  "frames": [
+    {
+      "row": 0,
+      "frame": 0,
+      "sourceBBox": [
+        32,
+        244,
+        256,
+        475
+      ],
+      "packedRect": [
+        46,
+        78,
+        163,
+        168
+      ],
+      "bottom": 246
+    },
+    {
+      "row": 0,
+      "frame": 1,
+      "sourceBBox": [
+        53,
+        138,
+        256,
+        438
+      ],
+      "packedRect": [
+        54,
+        27,
+        148,
+        219
+      ],
+      "bottom": 246
+    },
+    {
+      "row": 0,
+      "frame": 2,
+      "sourceBBox": [
+        0,
+        97,
+        253,
+        398
+      ],
+      "packedRect": [
+        36,
+        27,
+        184,
+        219
+      ],
+      "bottom": 246
+    },
+    {
+      "row": 0,
+      "frame": 3,
+      "sourceBBox": [
+        47,
+        73,
+        238,
+        312
+      ],
+      "packedRect": [
+        58,
+        72,
+        139,
+        174
+      ],
+      "bottom": 246
+    },
+    {
+      "row": 0,
+      "frame": 4,
+      "sourceBBox": [
+        12,
+        130,
+        256,
+        454
+      ],
+      "packedRect": [
+        39,
+        10,
+        178,
+        236
+      ],
+      "bottom": 246
+    },
+    {
+      "row": 0,
+      "frame": 5,
+      "sourceBBox": [
+        0,
+        255,
+        205,
+        486
+      ],
+      "packedRect": [
+        53,
+        78,
+        149,
+        168
+      ],
+      "bottom": 246
+    },
+    {
+      "row": 1,
+      "frame": 0,
+      "sourceBBox": [
+        44,
+        109,
+        225,
+        336
+      ],
+      "packedRect": [
+        62,
+        81,
+        132,
+        165
+      ],
+      "bottom": 246
+    },
+    {
+      "row": 1,
+      "frame": 1,
+      "sourceBBox": [
+        4,
+        108,
+        256,
+        351
+      ],
+      "packedRect": [
+        36,
+        69,
+        184,
+        177
+      ],
+      "bottom": 246
+    },
+    {
+      "row": 1,
+      "frame": 2,
+      "sourceBBox": [
+        10,
+        71,
+        230,
+        341
+      ],
+      "packedRect": [
+        48,
+        49,
+        160,
+        197
+      ],
+      "bottom": 246
+    },
+    {
+      "row": 1,
+      "frame": 3,
+      "sourceBBox": [
+        23,
+        85,
+        211,
+        332
+      ],
+      "packedRect": [
+        59,
+        66,
+        137,
+        180
+      ],
+      "bottom": 246
+    },
+    {
+      "row": 1,
+      "frame": 4,
+      "sourceBBox": [
+        10,
+        146,
+        256,
+        375
+      ],
+      "packedRect": [
+        38,
+        79,
+        179,
+        167
+      ],
+      "bottom": 246
+    },
+    {
+      "row": 1,
+      "frame": 5,
+      "sourceBBox": [
+        0,
+        110,
+        191,
+        366
+      ],
+      "packedRect": [
+        58,
+        60,
+        139,
+        186
+      ],
+      "bottom": 246
+    }
+  ]
+}

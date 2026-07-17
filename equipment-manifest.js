@@ -13,6 +13,35 @@ window.ROMAN_EQUIPMENT_MANIFEST = {
       "row": 0,
       "poseFamily": "one_handed_walk"
     },
+    "jump": {
+      "row": 0,
+      "poseFamily": "one_handed_airborne",
+      "composition": "pose_specific_generated",
+      "decisionLevel": 4,
+      "frameMap": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "vaultDown": {
+      "row": 1,
+      "poseFamily": "one_handed_platform_vault_down",
+      "composition": "pose_specific_generated",
+      "decisionLevel": 4,
+      "frameMap": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "duration": 0.34
+    },
     "attack": {
       "row": 1,
       "poseFamily": "one_handed_forward_thrust"
@@ -41,8 +70,10 @@ window.ROMAN_EQUIPMENT_MANIFEST = {
     },
     "master": {
       "family": "one_handed_sword",
-      "composition": "image_edited",
+      "composition": "wide_cells",
       "decisionLevel": 3,
+      "outputCellWidth": 512,
+      "framePaddingX": 128,
       "editMode": "built-in image editing",
       "referenceAsset": "assets/master-diamond-sword-v1.png",
       "canonicalSourcesByArmor": {
@@ -50,12 +81,12 @@ window.ROMAN_EQUIPMENT_MANIFEST = {
         "silver": "assets/hero-roman-silver-v1.png"
       },
       "sourcesByArmor": {
-        "bronze": "assets/hero-roman-master-imageedit-v2.png",
-        "silver": "assets/hero-roman-silver-master-imageedit-v2.png"
+        "bronze": "assets/hero-roman-master-imageedit-v3.png",
+        "silver": "assets/hero-roman-silver-master-imageedit-v3.png"
       },
       "outputsByArmor": {
-        "bronze": "assets/hero-roman-master-imageedit-v2.png",
-        "silver": "assets/hero-roman-silver-master-imageedit-v2.png"
+        "bronze": "assets/characters/roman/assembled/bronze-master.png",
+        "silver": "assets/characters/roman/assembled/silver-master.png"
       },
       "editedRows": [
         0,
@@ -409,5 +440,43 @@ window.ROMAN_EQUIPMENT_MANIFEST = {
   "validation": {
     "cellPadding": 12,
     "maxAnchorJump": 120
+  },
+  "motionSheets": {
+    "grid": {
+      "columns": 6,
+      "rows": 2,
+      "cellWidth": 256,
+      "cellHeight": 256
+    },
+    "transparentGutter": 10,
+    "bottomAnchor": 246,
+    "sourcesByArmorAndWeapon": {
+      "bronze": {
+        "gladius": "assets/characters/roman/motions/bronze-gladius-jump-vault-v1.png",
+        "diamond": "assets/characters/roman/motions/bronze-diamond-jump-vault-v1.png",
+        "master": "assets/characters/roman/motions/bronze-master-jump-vault-v1.png"
+      },
+      "silver": {
+        "gladius": "assets/characters/roman/motions/silver-gladius-jump-vault-v1.png",
+        "diamond": "assets/characters/roman/motions/silver-diamond-jump-vault-v1.png",
+        "master": "assets/characters/roman/motions/silver-master-jump-vault-v1.png"
+      }
+    },
+    "sourceFacingByArmor": {
+      "bronze": "right",
+      "silver": "left"
+    },
+    "sourceFacingByArmorAndWeapon": {
+      "bronze": {
+        "gladius": "right",
+        "diamond": "left",
+        "master": "left"
+      },
+      "silver": {
+        "gladius": "left",
+        "diamond": "left",
+        "master": "left"
+      }
+    }
   }
 };

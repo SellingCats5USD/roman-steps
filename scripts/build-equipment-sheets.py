@@ -79,14 +79,14 @@ def main() -> int:
     data = json.loads(manifest_path.read_text(encoding="utf-8"))
     root = (manifest_path.parent / data.get("projectRoot", ".")).resolve()
 
-    if any(weapon.get("composition") == "layered" for weapon in data["weapons"].values()):
+    if any(weapon.get("composition") in {"layered", "wide_cells"} for weapon in data["weapons"].values()):
         run_main(HERE / "build-master-diamond-sword-sheets.py", [])
 
     filtered = dict(data)
     filtered["weapons"] = {
         key: value
         for key, value in data["weapons"].items()
-        if value.get("composition") not in {"layered", "image_edited"}
+        if value.get("composition") not in {"layered", "image_edited", "wide_cells"}
     }
     temporary = manifest_path.parent / ".equipment-manifest-compose.tmp.json"
     temporary.write_text(json.dumps(filtered, indent=2), encoding="utf-8")

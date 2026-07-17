@@ -1,11 +1,18 @@
 {
-  "version": 1,
-  "grid": [
+  "version": 2,
+  "sourceGrid": [
     6,
     4,
     256,
     256
   ],
+  "grid": [
+    6,
+    4,
+    512,
+    256
+  ],
+  "framePaddingX": 128,
   "poses": [
     {
       "row": 0,

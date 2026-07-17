@@ -1,0 +1,362 @@
+{
+  "version": 1,
+  "projectRoot": "../../..",
+  "sprites": {
+    "sword": {
+      "source": "assets/barbarian-sword-v1.png",
+      "output": "assets/characters/enemies/assembled/barbarian-sword-clean.png",
+      "columns": 6,
+      "rows": 2,
+      "paddingX": 96,
+      "logicalCellWidth": 278.6666666666667,
+      "logicalCellHeight": 470.5,
+      "outputCellWidth": 471,
+      "outputCellHeight": 471,
+      "frameBoxes": [
+        [
+          [
+            174,
+            46,
+            359,
+            418
+          ],
+          [
+            159,
+            46,
+            329,
+            420
+          ],
+          [
+            134,
+            48,
+            326,
+            421
+          ],
+          [
+            116,
+            49,
+            320,
+            422
+          ],
+          [
+            133,
+            48,
+            272,
+            421
+          ],
+          [
+            91,
+            49,
+            289,
+            422
+          ]
+        ],
+        [
+          [
+            152,
+            29,
+            340,
+            392
+          ],
+          [
+            109,
+            27,
+            338,
+            390
+          ],
+          [
+            78,
+            12,
+            306,
+            391
+          ],
+          [
+            64,
+            39,
+            365,
+            389
+          ],
+          [
+            73,
+            29,
+            360,
+            388
+          ],
+          [
+            110,
+            29,
+            290,
+            389
+          ]
+        ]
+      ]
+    },
+    "javelin": {
+      "source": "assets/barbarian-javelin-v1.png",
+      "output": "assets/characters/enemies/assembled/barbarian-javelin-clean.png",
+      "columns": 6,
+      "rows": 2,
+      "paddingX": 96,
+      "logicalCellWidth": 295.6666666666667,
+      "logicalCellHeight": 443.5,
+      "outputCellWidth": 488,
+      "outputCellHeight": 444,
+      "frameBoxes": [
+        [
+          [
+            135,
+            43,
+            398,
+            396
+          ],
+          [
+            162,
+            71,
+            388,
+            397
+          ],
+          [
+            159,
+            31,
+            386,
+            397
+          ],
+          [
+            135,
+            48,
+            374,
+            396
+          ],
+          [
+            137,
+            71,
+            384,
+            395
+          ],
+          [
+            123,
+            48,
+            370,
+            396
+          ]
+        ],
+        [
+          [
+            108,
+            69,
+            383,
+            380
+          ],
+          [
+            99,
+            70,
+            352,
+            380
+          ],
+          [
+            107,
+            86,
+            324,
+            380
+          ],
+          [
+            86,
+            68,
+            450,
+            377
+          ],
+          [
+            113,
+            79,
+            334,
+            377
+          ],
+          [
+            117,
+            37,
+            373,
+            379
+          ]
+        ]
+      ]
+    },
+    "gladiator": {
+      "source": "assets/gladiator-v3.png",
+      "output": "assets/characters/enemies/assembled/gladiator-clean.png",
+      "columns": 6,
+      "rows": 3,
+      "paddingX": 96,
+      "logicalCellWidth": 256.0,
+      "logicalCellHeight": 341.3333333333333,
+      "outputCellWidth": 448,
+      "outputCellHeight": 342,
+      "frameBoxes": [
+        [
+          [
+            174,
+            28,
+            329,
+            308
+          ],
+          [
+            172,
+            29,
+            313,
+            308
+          ],
+          [
+            133,
+            30,
+            287,
+            307
+          ],
+          [
+            157,
+            30,
+            297,
+            308
+          ],
+          [
+            139,
+            29,
+            294,
+            308
+          ],
+          [
+            149,
+            31,
+            289,
+            309
+          ]
+        ],
+        [
+          [
+            128,
+            25,
+            307,
+            300
+          ],
+          [
+            99,
+            40,
+            307,
+            299
+          ],
+          [
+            68,
+            43,
+            358,
+            299
+          ],
+          [
+            103,
+            47,
+            390,
+            299
+          ],
+          [
+            123,
+            48,
+            386,
+            299
+          ],
+          [
+            135,
+            24,
+            293,
+            300
+          ]
+        ],
+        [
+          [
+            135,
+            17,
+            320,
+            290
+          ],
+          [
+            142,
+            15,
+            323,
+            290
+          ],
+          [
+            129,
+            19,
+            309,
+            290
+          ],
+          [
+            116,
+            11,
+            297,
+            291
+          ],
+          [
+            114,
+            16,
+            326,
+            290
+          ],
+          [
+            123,
+            20,
+            291,
+            291
+          ]
+        ]
+      ]
+    },
+    "mounted": {
+      "source": "assets/barbarian-mounted-v2.png",
+      "output": "assets/characters/enemies/assembled/barbarian-mounted-clean.png",
+      "columns": 6,
+      "rows": 1,
+      "paddingX": 96,
+      "logicalCellWidth": 362.0,
+      "logicalCellHeight": 724.0,
+      "outputCellWidth": 554,
+      "outputCellHeight": 724,
+      "frameBoxes": [
+        [
+          [
+            118,
+            179,
+            461,
+            564
+          ],
+          [
+            83,
+            186,
+            435,
+            565
+          ],
+          [
+            56,
+            191,
+            429,
+            568
+          ],
+          [
+            68,
+            196,
+            442,
+            568
+          ],
+          [
+            91,
+            194,
+            425,
+            571
+          ],
+          [
+            58,
+            196,
+            434,
+            548
+          ]
+        ]
+      ]
+    }
+  }
+}

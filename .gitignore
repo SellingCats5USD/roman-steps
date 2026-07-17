@@ -3,3 +3,5 @@ tmp/
 assets/*-chroma.png
 Thumbs.db
 .DS_Store
+__pycache__/
+*.py[cod]
